@@ -1,9 +1,25 @@
 local math_floor = math.floor
 local string_rep = string.rep
 
-local print = function(str) ChatFrame1:AddMessage(tostring(str)) end
-
 local cast = CreateFrame("Frame", nil, UIParent)
+
+function cast:Print(...)
+	local str = tostring(self) .. ": "
+	for i = 1, select("#", ...) do
+		str = str .. tostring(select(i, ...)) .. " "
+	end
+
+	ChatFrame1:AddMessage(str)
+end
+
+do
+	local i = getmetatable(cast).__index
+	local mt = {
+		__index = i,
+		__tostring = function() return "ASCIIbar" end,
+	}
+	setmetatable(cast, mt)
+end
 
 local OnEvent = function(self, event, ...)
 	self[event](self, ...)
@@ -19,21 +35,21 @@ local equal, arrow, hyphen, bracket = 9, 9, 4.5, 7.5
 do
 	cast:SetScript("OnMouseDown", function(self, button)
 		if IsAltKeyDown() and self:IsMovable() then
-			self:ClearAllPoints()
 			self:StartMoving()
 		end
 	end)
 
 	cast:SetScript("OnMouseUp", function(self, button)
 		if self:IsMovable() then
-			local x, y = self:GetCenter()
-			self.db.x, self.db.y = x, y
 			self:StopMovingOrSizing()
+			local x, y = self:GetLeft(), self:GetTop()
+			self.db.x, self.db.y = x, y
 		end
 	end)
 
-	cast:SetHeight(15)
+	cast:SetHeight(14.5)
 	cast:SetWidth(328)
+	cast:SetClampedToScreen(true)
 
 	local font = cast:CreateFontString(nil, "OVERLAY")
 	font:SetPoint("LEFT")
@@ -50,23 +66,6 @@ do
 	time:SetShadowColor(0, 0, 0, 1)
 	time:SetShadowOffset(0, -1)
 	cast.time = time
-end
-
-local ColorGradient = function(perc, r1, g1, b1, r2, g2, b2, r3, g3, b3)
-	if perc >= 1 then
-		return r3, g3, b3
-	elseif perc <= 0 then
-		return r1, g1, b1
-	end
-
-	local segment, relperc = math.modf(perc*(3-1))
-	local offset = (segment*3)+1
-
-	if(offset == 1) then
-		return r1 + (r2-r1)*relperc, g1 + (g2-g1)*relperc, b1 + (b2-b1)*relperc
-	end
-
-	return r2 + (r3-r2)*relperc, g2 + (g3-g2)*relperc, b2 + (b3-b2)*relperc
 end
 
 local CreateString = function(per, reverse)
@@ -135,7 +134,6 @@ function cast:Unlock()
 end
 
 function cast:ADDON_LOADED(addon)
-	print(addon)
 	if addon:lower() == "asciibar" then
 		local db = _G.ASCIIbarDB
 		local server, name = GetRealmName(), UnitName("player")
@@ -151,7 +149,7 @@ function cast:ADDON_LOADED(addon)
 		if not db then
 			db = defaults
 		elseif not db[server] then
-			db[server] = defatuls[server]
+			db[server] = defaults[server]
 		elseif not db[server][name] then
 			db[server][name] = defaults[server][name]
 		end
@@ -160,7 +158,9 @@ function cast:ADDON_LOADED(addon)
 
 		self.db = _G.ASCIIbarDB[server][name]
 
-		self:SetPoint("CENTER", db.x, db.y)
+		local x, y = self.db.x, self.db.y
+
+		self:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
 	end
 end
 
@@ -284,4 +284,23 @@ end
 
 cast.slash = {}
 local slash = cast.slash
+SLASH_ASCII1 = "/asciibar"
 
+-- Copied from tekkubs StealYourCarbon, best slash command method.
+SlashCmdList.ASCII = function(input)
+	local cmd, rest = string.match(input, "^%s*(%S+)%s*(.*)$")
+	local handler = cmd and slash[cmd:lower()]
+
+	if handler then
+		handler(cast, rest)
+	else
+		local self = cast
+		self:Print("Because its cooler")
+		self:Print("         Yeah you cant change the size unless you know lua")
+		self:Print("         lock: you can move it though")
+	end
+end
+
+function slash.lock(self, state)
+	self:Unlock()
+end
