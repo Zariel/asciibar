@@ -1,2 +1,6 @@
 ## Interface: 20400
-WTFCASTINGBARZ.lua
+## Title: ASCIIbar
+## Version: 1
+## Author: Zariel
+
+core.lua
