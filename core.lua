@@ -1,3 +1,6 @@
+local math_floor = math.floor
+local string_rep = string.rep
+
 local print = function(str) ChatFrame1:AddMessage(tostring(str)) end
 
 local cast = CreateFrame("Frame", nil, UIParent)
@@ -17,7 +20,6 @@ do
 	cast:SetWidth(328)
 
 	local font = cast:CreateFontString(nil, "OVERLAY")
-	--font:SetAllPoints(cast)
 	font:SetPoint("LEFT")
 	font:SetFont(STANDARD_TEXT_FONT, 15)
 	font:SetJustifyH("LEFT")
@@ -37,15 +39,16 @@ end
 cast:SetPoint("CENTER")
 
 local CreateString = function(per, reverse)
-	per = math.floor(per * 100) / 100
-	local nE = math.floor((per * 306) / 9)
+	per = math_floor(per * 100) / 100
+	local nE = math_floor((per * 306) / 9)
 	local nH = (34 - nE) * 2
 
+	local nA = nE < 1 and 0 or 1
 	local str
 	if reverse then
-		str = "[" .. string.rep("-", nH) .. "<" .. string.rep("=", nE) .. "]"
+		str = "[" .. string_rep("-", nH) .. string_rep("<", nA) .. string_rep("=", nE) .. "]"
 	else
-		str = "[" .. string.rep("=", nE - 1) .. ">" .. string.rep("-", nH) .. "]"
+		str = "[" .. string_rep("=", nE - 1) .. string_rep(">", nA) .. string_rep("-", nH) .. "]"
 	end
 
 	return str
