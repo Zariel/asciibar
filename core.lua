@@ -4,18 +4,34 @@ local string_rep = string.rep
 local print = function(str) ChatFrame1:AddMessage(tostring(str)) end
 
 local cast = CreateFrame("Frame", nil, UIParent)
-cast:SetScript("OnEvent", function(self, event, ...)
-	if not self[event] then
-		ChatFrame1:AddMessage(event)
-	else
-		self[event](self, ...)
-	end
-end)
+
+local OnEvent = function(self, event, ...)
+	self[event](self, ...)
+end
+
+cast:SetScript("OnEvent", OnEvent)
+
 cast:RegisterEvent("PLAYER_ENTERING_WORLD")
+cast:RegisterEvent("ADDON_LOADED")
 
 local equal, arrow, hyphen, bracket = 9, 9, 4.5, 7.5
 
 do
+	cast:SetScript("OnMouseDown", function(self, button)
+		if IsAltKeyDown() and self:IsMovable() then
+			self:ClearAllPoints()
+			self:StartMoving()
+		end
+	end)
+
+	cast:SetScript("OnMouseUp", function(self, button)
+		if self:IsMovable() then
+			local x, y = self:GetCenter()
+			self.db.x, self.db.y = x, y
+			self:StopMovingOrSizing()
+		end
+	end)
+
 	cast:SetHeight(15)
 	cast:SetWidth(328)
 
@@ -36,12 +52,27 @@ do
 	cast.time = time
 end
 
-cast:SetPoint("CENTER")
+local ColorGradient = function(perc, r1, g1, b1, r2, g2, b2, r3, g3, b3)
+	if perc >= 1 then
+		return r3, g3, b3
+	elseif perc <= 0 then
+		return r1, g1, b1
+	end
+
+	local segment, relperc = math.modf(perc*(3-1))
+	local offset = (segment*3)+1
+
+	if(offset == 1) then
+		return r1 + (r2-r1)*relperc, g1 + (g2-g1)*relperc, b1 + (b2-b1)*relperc
+	end
+
+	return r2 + (r3-r2)*relperc, g2 + (g3-g2)*relperc, b2 + (b3-b2)*relperc
+end
 
 local CreateString = function(per, reverse)
 	per = math_floor(per * 100) / 100
-	local nE = math_floor((per * 306) / 9)
-	local nH = (34 - nE) * 2
+	local nE = math_floor((per * 270) / 9)
+	local nH = (30 - nE) * 2
 
 	local nA = nE < 1 and 0 or 1
 	local str
@@ -84,6 +115,52 @@ local OnUpdate = function(self)
 		self:Show()
 	else
 		self:Hide()
+	end
+end
+
+function cast:Unlock()
+	if self:IsMovable() then
+		self:SetScript("OnUpdate", OnUpdate)
+		self:SetScript("OnEvent", OnEvent)
+		self:Hide()
+		self:EnableMouse(nil)
+		self:SetMovable(nil)
+	else
+		self:SetScript("OnUpdate", nil)
+		self:SetScript("OnEvent", nil)
+		self:Show()
+		self:EnableMouse(true)
+		self:SetMovable(true)
+	end
+end
+
+function cast:ADDON_LOADED(addon)
+	print(addon)
+	if addon:lower() == "asciibar" then
+		local db = _G.ASCIIbarDB
+		local server, name = GetRealmName(), UnitName("player")
+		local defaults = {
+			[server] = {
+				[name] = {
+					x = 0,
+					y = 0
+				}
+			}
+		}
+
+		if not db then
+			db = defaults
+		elseif not db[server] then
+			db[server] = defatuls[server]
+		elseif not db[server][name] then
+			db[server][name] = defaults[server][name]
+		end
+
+		_G.ASCIIbarDB = db
+
+		self.db = _G.ASCIIbarDB[server][name]
+
+		self:SetPoint("CENTER", db.x, db.y)
 	end
 end
 
@@ -171,16 +248,6 @@ function cast:UNIT_SPELLCAST_CHANNEL_START(unit, spellName, spellRank)
 	self.duration = length
 	self.fade = true
 
-	--[[
-
-	if not self.target or self.target == "" then
-		self.name:SetFormattedText("%s", spell)
-	else
-		self.name:SetFormattedText("%s --> %s", spell, self.target)
-	end
-
-	]]
-
 	self:Show()
 end
 
@@ -214,3 +281,7 @@ function cast:UNIT_SPELLCAST_INTERRUPTED(unit)
 	if unit ~= "player" then return end
 	self:UNIT_SPELLCAST_STOP(unit)
 end
+
+cast.slash = {}
+local slash = cast.slash
+
