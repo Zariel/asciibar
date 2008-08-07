@@ -69,7 +69,7 @@ local OnUpdate = function(self)
 		local elapsed = (time - startTime)
 		local per = elapsed / duration
 		self.bar:SetText(CreateString(per))
-		self.time:SetFormattedText("[%02.0f:%02.0f]", elapsed, duration)
+		self.time:SetFormattedText("[%0.1f:%0.1f]", elapsed, duration)
 		self:Show()
 	elseif self.channeling then
 		if time > endTime then
