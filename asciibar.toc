@@ -2,5 +2,6 @@
 ## Title: ASCIIbar
 ## Version: 1
 ## Author: Zariel
+## SavedVariables: ASCIIbarDB
 
 core.lua
