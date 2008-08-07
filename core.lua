@@ -79,8 +79,6 @@ do
 			time = GetTime()
 		end
 
-		self:Print(iter%4)
-
 		per = math_floor(per * 100) / 100
 		local nE = math_floor((per * 270) / 9)
 		local nH = (30 - nE) * 2
