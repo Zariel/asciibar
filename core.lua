@@ -68,20 +68,33 @@ do
 	cast.time = time
 end
 
-local CreateString = function(per, reverse)
-	per = math_floor(per * 100) / 100
-	local nE = math_floor((per * 270) / 9)
-	local nH = (30 - nE) * 2
+do
+	local iter = 0
+	local time = GetTime()
+	local t = { [0]='|', '/', '-', '\\' }
+	function cast:CreateString(per, reverse)
+		local elapsed = GetTime() - time
+		if elapsed >= 0.1 then
+			iter = iter + 1
+			time = GetTime()
+		end
 
-	local nA = nE < 1 and 0 or 1
-	local str
-	if reverse then
-		str = "[" .. string_rep("-", nH) .. string_rep("<", nA) .. string_rep("=", nE) .. "]"
-	else
-		str = "[" .. string_rep("=", nE - 1) .. string_rep(">", nA) .. string_rep("-", nH) .. "]"
+		self:Print(iter%4)
+
+		per = math_floor(per * 100) / 100
+		local nE = math_floor((per * 270) / 9)
+		local nH = (30 - nE) * 2
+
+		local nA = nE < 1 and 0 or 1
+		local str
+		if reverse then
+			str = "[" .. string_rep("-", nH) .. string_rep("<", nA) .. string_rep("=", nE) .. "]"
+		else
+			str = "[" .. string_rep("=", nE - 1) .. string_rep(t[iter % 4], nA) .. string_rep("-", nH) .. "]"
+		end
+
+		return str
 	end
-
-	return str
 end
 
 local OnUpdate = function(self)
@@ -98,7 +111,7 @@ local OnUpdate = function(self)
 		end
 		local elapsed = (time - startTime)
 		local per = elapsed / duration
-		self.bar:SetText(CreateString(per))
+		self.bar:SetText(self:CreateString(per))
 		self.time:SetFormattedText("[%0.1f:%0.1f]", elapsed, duration)
 		self:Show()
 	elseif self.channeling then
@@ -109,7 +122,7 @@ local OnUpdate = function(self)
 		end
 		local elapsed = (time - startTime)
 		local per = elapsed / duration
-		self.bar:SetText(CreateString(per, true))
+		self.bar:SetText(self:CreateString(per, true))
 		self.time:SetFormattedText("[%02.0f:%02.0f]", elapsed, duration)
 		self:Show()
 	else
